@@ -34,7 +34,7 @@ jobs:
       - name: 🏗️ Build project
         run: npm run build
 
-      # ✅ Step 6: Test (optional)
+      # ✅ Step 6: Test (optional) 
       - name: 🧪 Run tests
         run: npm test --if-present
 
