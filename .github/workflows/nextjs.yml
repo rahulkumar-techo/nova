@@ -1,4 +1,4 @@
-name: 🚀 Next.js CI
+name: 🚀 Next.js CI/CD (NoteMentor)
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 
 jobs:
   build:
+    name: 🏗️ Build and Test
     runs-on: ubuntu-latest
 
     steps:
@@ -15,42 +16,61 @@ jobs:
       - name: 📦 Checkout code
         uses: actions/checkout@v4
 
-      # ⚙️ Step 2: Setup Node.js
+      # ⚙️ Step 2: Setup Node.js with caching
       - name: 🧩 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: "npm"
+          cache: 'npm'
 
-      # 📦 Step 3: Install dependencies
+      # ⚡ Step 3: Cache Next.js build (improves rebuild times)
+      - name: ⚡ Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: |
+            .next/cache
+            node_modules/.cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-
+
+      # 📦 Step 4: Install dependencies
       - name: 📥 Install dependencies
         run: npm ci
 
-      # 🧹 Step 4: Lint (optional)
+      # 🧹 Step 5: Lint (optional)
       - name: 🔍 Run ESLint
         run: npm run lint --if-present
 
-      # 🏗️ Step 5: Build Next.js app
-      - name: 🏗️ Build project
+      # 🔐 Step 6: Build project with environment variables
+      - name: 🏗️ Build Next.js project
         run: npm run build
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_SECRET_ID: ${{ secrets.GOOGLE_SECRET_ID }}
+          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
+          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
 
-      # ✅ Step 6: Test (optional) 
+      # ✅ Step 7: Run tests (optional)
       - name: 🧪 Run tests
         run: npm test --if-present
 
-      # 🧾 Step 7: Upload build artifact (optional)
-      - name: 📤 Upload .next build output
+      # 📤 Step 8: Upload production build (optional)
+      - name: 📦 Upload .next build output
         uses: actions/upload-artifact@v4
         with:
           name: next-build
           path: .next
+
+  # 🔔 Notification Job
   notify:
-    name: 🔔 Notifications
+    name: 🔔 Telegram Notification
     runs-on: ubuntu-latest
     if: always()
 
     steps:
-      - name: 💬 Telegram Notification
+      - name: 💬 Send Telegram Notification
         run: |
           MESSAGE="🚀 *NoteMentor CI/CD*%0AStatus: *${{ job.status }}*%0ABranch: \`${{ github.ref_name }}\`%0ACommit: \`${{ github.sha }}\`%0ABy: *${{ github.actor }}*%0A🔗 [View Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
