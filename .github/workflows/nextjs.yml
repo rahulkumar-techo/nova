@@ -1,0 +1,59 @@
+name: 🚀 Next.js CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 🧰 Step 1: Checkout repository
+      - name: 📦 Checkout code
+        uses: actions/checkout@v4
+
+      # ⚙️ Step 2: Setup Node.js
+      - name: 🧩 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      # 📦 Step 3: Install dependencies
+      - name: 📥 Install dependencies
+        run: npm ci
+
+      # 🧹 Step 4: Lint (optional)
+      - name: 🔍 Run ESLint
+        run: npm run lint --if-present
+
+      # 🏗️ Step 5: Build Next.js app
+      - name: 🏗️ Build project
+        run: npm run build
+
+      # ✅ Step 6: Test (optional)
+      - name: 🧪 Run tests
+        run: npm test --if-present
+
+      # 🧾 Step 7: Upload build artifact (optional)
+      - name: 📤 Upload .next build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: .next
+  notify:
+    name: 🔔 Notifications
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: 💬 Telegram Notification
+        run: |
+          MESSAGE="🚀 *NoteMentor CI/CD*%0AStatus: *${{ job.status }}*%0ABranch: \`${{ github.ref_name }}\`%0ACommit: \`${{ github.sha }}\`%0ABy: *${{ github.actor }}*%0A🔗 [View Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+          -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+          -d parse_mode="Markdown" \
+          -d text="$MESSAGE"
