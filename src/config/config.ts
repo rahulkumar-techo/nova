@@ -10,7 +10,7 @@ const envConfig = {
 
     },
     mongo:{
-        url:process.env.MONGODB||""
+        url:process.env.MONGODB_URI||""
     },
     secrets:{
         next_secrets:process.env.NEXTAUTH_SECRET||""
